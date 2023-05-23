@@ -1,0 +1,220 @@
+<head>
+    <script src="threejs.js" defer></script>
+</head>
+<body>
+    <h1>Threejs</h1>
+    <div id="div" class="div">
+        <canvas id="c" width="1200px" height="600px"></canvas>
+    </div>
+</body>
+<style>
+    div {
+        width:"100%";
+        height:"600px";
+        position:absolute;
+    }
+</style>
+<script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+ 
+<script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
+        "three/addons/": "https://threejs.org/examples/jsm/controls/TrackballControls.js"
+      }
+    }
+</script>
+    
+
+
+<script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.152.2/build/three.module.js';
+    import { TrackballControls } from 'https://threejs.org/examples/jsm/controls/TrackballControls.js'
+
+    const canvas = document.querySelector('#c');
+    const renderer = new THREE.WebGLRenderer({antialias: true, canvas});
+
+    const fov = 75;
+    const aspect = 2;  // the canvas default
+    const near = 0.1;
+    const far = 100;
+    const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+
+    camera.position.z = 2;
+
+    const scene = new THREE.Scene();
+
+    const boxWidth = 1;
+    const boxHeight = 1;
+    const boxDepth = 1;
+    const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+    const material = new THREE.MeshPhongMaterial({color: 0x44aa88});
+
+    const cube = new THREE.Mesh(geometry, material);
+
+    const cubes = [
+        makeInstance(geometry, 0x44aa88,  0, 0, 0),
+        makeInstance(geometry, 0x8844aa, -2, 0, 0),
+        makeInstance(geometry, 0xaa8844,  2, 0, 0),
+    ];
+
+    let vx = 0 
+    let vz = 0
+    let ry = 0
+    let rx = 0
+
+    const axesHelper = new THREE.AxesHelper( 5 );
+    scene.add( axesHelper );
+
+    renderer.render(scene, camera);
+
+    const color = 0xFFFFFF;
+    const intensity = 1;
+    const light = new THREE.DirectionalLight(color, intensity);
+    const light2 = new THREE.DirectionalLight(0xFF0000, intensity)
+    light.position.set(-1, 2, 4);
+    light2.position.set(1, 0, -4)
+    scene.add(light);
+    scene.add(light2);
+
+    function render(time) {
+        time *= 0.001; 
+        
+        // cubes.forEach((cube, ndx) => {
+        //     const speed = 1 + ndx * .1;
+        //     const rot = time * speed;
+        //     cube.rotation.x = rot;
+        //     cube.rotation.y = rot;
+        // });
+
+        // camera.position.x += vx
+        // camera.position.z += vz
+
+        move()
+        rotate()
+
+        camera.rotation.y += ry
+        camera.rotation.x += rx
+
+        renderer.render(scene, camera);
+        
+        requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+
+    function makeInstance(geometry, color, x, y, z) {
+        const material = new THREE.MeshPhongMaterial({color});
+        
+        const cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+        
+        cube.position.x = x;
+        cube.position.y = y;
+        cube.position.z = z;
+
+        return cube;
+    }  
+
+    // uses the canvas location and the absolute position of the mouse to get x and y. Subtracts by half width and height to get positive and negative
+    function getMousePos(canvas, evt) {
+        var rect = canvas.getBoundingClientRect();
+        return {
+            x: evt.clientX - rect.left - rect.width/2,
+            y: evt.clientY - rect.top - rect.height/2
+        };
+    }
+
+    // event listener run whenever the mouse is moved
+    canvas.addEventListener("mousemove", (event) => {
+        var mousePos = getMousePos(canvas, event)
+        var mouseY = -mousePos.y;
+        var mouseX = -mousePos.x;
+
+        // camera.rotation.x rotates up and down, so on the 2d y axis. 
+        if (mouseY < -150 && camera.rotation.x >= -.8){ // down
+            var speed = -0.001 * (2.5 ** Math.abs(mouseY/100)) // sets speed exponentially proportional to the mouse position
+            rx = speed
+            return
+        }
+        else if (camera.rotation.x < -0.8){
+            rx = 0
+        }
+        if (mouseY > 150 && camera.rotation.x <= .8){ // up
+            var speed = 0.001 * (2.5 ** Math.abs(mouseY/100))
+            rx = speed
+            return
+        }
+        else if (camera.rotation.x > 0.8){
+            rx = 0
+        }
+        // camera.rotation.y rotates left and right, so on the 2d x axis
+        if (mouseX < -100){
+            var speed = -0.001 * (3 ** Math.abs(mouseX/200)) 
+            ry = speed
+        }
+        if (mouseX > 100){
+            var speed = 0.001 * (3 ** Math.abs(mouseX/200))
+            ry = speed
+        }
+        if (-100 < mouseX && 100 > mouseX){
+            ry = 0
+        }
+        if (-150 < mouseY && 150 > mouseY){
+            rx = 0
+        }
+    })
+
+    // rotates camera
+    function rotateCamera(mousePos){
+    }
+
+    document.addEventListener("keydown", (event) => {
+            if(event.keyCode == 37){
+                vx = -0.1
+            } else if(event.keyCode == 39){
+                vx = 0.1
+            } else if(event.keyCode == 38){
+                vz = -0.1
+            } else if(event.keyCode == 40){
+                vz = 0.1
+            }
+            renderer.render(scene, camera)
+        })
+        document.addEventListener("keyup", () => {
+            vx = 0
+            vz = 0
+        })
+
+    function move(){
+        var localZX = Math.sin(camera.rotation.y)*vz 
+        var localZZ = Math.cos(camera.rotation.y)*vz 
+
+        var localXX = -Math.sin(camera.rotation.y - 2*(Math.PI)/4)*vx 
+        var localXZ = -Math.cos(camera.rotation.y - 2*(Math.PI)/4)*vx 
+
+        var velocityX =  Math.sqrt(Math.pow(localZX, 2) + Math.pow(localXX, 2))
+        var velocityY = Math.sqrt(Math.pow(localZZ, 2) + Math.pow(localXZ, 2))
+
+        if(vx != 0){
+            camera.position.x += localXX
+            camera.position.z += localXZ
+        }
+        if(vz != 0){
+            camera.position.x += localZX
+            camera.position.z += localZZ
+        }
+    }
+
+    function rotate(){
+        var localXX = Math.cos(camera.rotation.y)*rx
+        var localXZ = -Math.sin(camera.rotation.y)*rx 
+
+        console.log(localXX, localXZ, camera.rotation.y)
+        if(rx != 0){
+            camera.rotation.x += localXX
+            camera.rotation.z += localXZ
+        }
+    }
+
+
+ </script>
