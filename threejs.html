@@ -29,8 +29,9 @@
 
 <script type="module">
     import * as THREE from 'three';
-    import { TrackballControls } from 'https://threejs.org/examples/jsm/controls/TrackballControls.js'
-    import { FirstPersonControls } from '../FirstPersonControls.js';
+    import { TrackballControls } from 'https://threejs.org/examples/jsm/controls/TrackballControls.js';
+    import { PointerLockControls } from 'https://threejs.org/examples/jsm/controls/PointerLockControls.js';
+
 
     const canvas = document.querySelector('#c');
     const renderer = new THREE.WebGLRenderer({antialias: true, canvas});
@@ -59,7 +60,10 @@
         makeInstance(geometry, 0xaa8844,  2, 0, 0),
     ];
 
-    const fpControls = new FirstPersonControls(camera, renderer.domElement)
+    var vx = 0;
+    var vz = 0;
+
+    const controls = new PointerLockControls( camera, document.body );
 
     const axesHelper = new THREE.AxesHelper( 5 );
     scene.add( axesHelper );
@@ -75,6 +79,10 @@
     scene.add(light);
     scene.add(light2);
 
+    var vector = new THREE.Vector3();
+
+    controls.connect();
+
     function render(time) {
         time *= 0.001; 
         
@@ -84,11 +92,9 @@
         //     cube.rotation.x = rot;
         //     cube.rotation.y = rot;
         // });
+        move();
 
-        fpControls.update(1.0);
         renderer.render(scene, camera);
-
-        
         
         requestAnimationFrame(render);
     }
@@ -114,6 +120,50 @@
             x: evt.clientX - rect.left - rect.width/2,
             y: evt.clientY - rect.top - rect.height/2
         };
+    }
+
+    var unlocked = true;
+    document.addEventListener("keydown", (event) => {
+        switch (event.code) {
+            case 'KeyW':
+                vx = 0.1
+                break
+            case 'KeyA':
+                vz = -0.1
+                break
+            case 'KeyS':
+                vx = -0.1
+                break
+            case 'KeyD':
+                vz = 0.1
+                break
+        }
+    });
+
+    document.addEventListener("keyup", (event) => {
+        switch (event.code) {
+            case 'KeyW':
+                vx = 0
+                break
+            case 'KeyA':
+                vz = 0
+                break
+            case 'KeyS':
+                vx = 0
+                break
+            case 'KeyD':
+                vz = 0
+                break
+        }
+    })
+
+    canvas.addEventListener("click", (event) => {
+        controls.lock();
+    });
+
+    function move(){
+        controls.moveForward(vx);
+        controls.moveRight(vz);
     }
 
  </script>
