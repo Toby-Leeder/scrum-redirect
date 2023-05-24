@@ -8,6 +8,7 @@ const _lookDirection = new Vector3();
 const _spherical = new Spherical();
 const _target = new Vector3();
 
+
 class FirstPersonControls {
 
 	constructor( object, domElement ) {
@@ -86,33 +87,11 @@ class FirstPersonControls {
 
 			}
 
-			if ( this.activeLook ) {
-
-				switch ( event.button ) {
-
-					case 0: this.moveForward = true; break;
-					case 2: this.moveBackward = true; break;
-
-				}
-
-			}
-
 			this.mouseDragOn = true;
 
 		};
 
 		this.onPointerUp = function ( event ) {
-
-			if ( this.activeLook ) {
-
-				switch ( event.button ) {
-
-					case 0: this.moveForward = false; break;
-					case 2: this.moveBackward = false; break;
-
-				}
-
-			}
 
 			this.mouseDragOn = false;
 
@@ -223,11 +202,14 @@ class FirstPersonControls {
 
 				const actualMoveSpeed = delta * this.movementSpeed;
 
-				if ( this.moveForward || ( this.autoForward && ! this.moveBackward ) ) var vz = ((actualMoveSpeed + this.autoSpeedFactor ) * - this.dampener) ;
-				if ( this.moveBackward ) var vz = ((actualMoveSpeed + this.autoSpeedFactor ) * this.dampener);
+				var vz = 0
+				var vx = 0
 
-				if ( this.moveLeft ) var vx = ((actualMoveSpeed) * - this.dampener)
-				if ( this.moveRight ) var vx = ((actualMoveSpeed) * this.dampener)
+				if ( this.moveForward || ( this.autoForward && ! this.moveBackward ) ) vz = ((actualMoveSpeed + this.autoSpeedFactor ) * - this.dampener) ;
+				if ( this.moveBackward ) vz = ((actualMoveSpeed + this.autoSpeedFactor ) * this.dampener);
+
+				if ( this.moveLeft ) vx = ((actualMoveSpeed) * - this.dampener)
+				if ( this.moveRight ) vx = ((actualMoveSpeed) * this.dampener)
 
 				move(vz, vx, this.object)
 
@@ -324,19 +306,23 @@ function contextmenu( event ) {
 }
 
 function move(vz, vx, camera){
+	var dir = 1
 	var localZX = Math.sin(camera.rotation.y)*vz 
 	var localZZ = Math.cos(camera.rotation.y)*vz 
 
 	var localXX = -Math.sin(camera.rotation.y - 2*(Math.PI)/4)*vx 
 	var localXZ = -Math.cos(camera.rotation.y - 2*(Math.PI)/4)*vx 
 
+	if ((camera.rotation.y % (2 * Math.PI)) > Math.PI){
+		dir = -1
+	}
 	if(vx != 0){
-		camera.position.x += localXX
-		camera.position.z += localXZ
+		camera.position.x += localXX * dir
+		camera.position.z += localXZ * dir
 	}
 	if(vz != 0){
-		camera.position.x += localZX
-		camera.position.z += localZZ
+		camera.position.x += localZX * dir
+		camera.position.z += localZZ * dir
 	}
 }
 
